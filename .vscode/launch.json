@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/json",
-            "args": ["./testnumber"],
+            "args": [".vscode/settings.json"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

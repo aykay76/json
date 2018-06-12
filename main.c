@@ -130,11 +130,6 @@ object_t* parseObject(FILE *fh)
     object_t *object = (object_t *)malloc(sizeof(object_t));
     namevalue_t *currentpair = 0;
 
-    // on entry c contains the open curly bracket that denotes an object in json
-    // so next up should be a string
-
-    // we are expecting a string so keep reading until we get a double quote (" = 0x0022)
-    // then we will hand off to the string parsing function
     char done = 0;
 
     while (!done)
@@ -144,6 +139,7 @@ object_t* parseObject(FILE *fh)
         if (c == 0x0022) // double quote, start of a name
         {
             namevalue_t *namevalue = (namevalue_t *)malloc(sizeof(namevalue_t));
+            namevalue->nextpair = 0;
 
             if (currentpair == 0)
             {
@@ -350,7 +346,7 @@ value_t* getValue(wchar_t *name)
 
 value_t* createValue()
 {
-
+    return 0;
 }
 
 unsigned char replaceValue(wchar_t *path, value_t *value)
@@ -361,6 +357,44 @@ unsigned char replaceValue(wchar_t *path, value_t *value)
 void freeJson(value_t *json)
 {
     // TODO: iterate through whole object freeing all string, arrays and subobjects
+    switch (json->type)
+    {
+        case Object: {
+            namevalue_t *pair = json->object->firstpair;
+            while (pair != 0)
+            {
+                namevalue_t *next = pair->nextpair;
+                free(pair->name);
+                freeJson(pair->value);
+                free(pair);
+                pair = next;
+            }
+            free(json->object);
+        }
+        break;
+        case Array: {
+            for (int i = 0; i < json->array->length; i++)
+            {
+                freeJson(json->array->values[i]);
+            }
+            free(json->array->values);
+            free(json->array);
+        }
+        break;
+        case String: {
+            free(json->string);
+        }
+        break;
+        case Null:
+        case True:
+        case False:
+        case Number:
+        default:
+            // nothing to do
+        break;
+    }
+
+    free(json);
 }
 
 int main(int argc, char** argv)
@@ -379,8 +413,7 @@ int main(int argc, char** argv)
     if (fh)
     {
         value_t *value = parseValue(fh);
-        // TODO: this isn't enough - we need deep freeing of all the substructures
-        free(value);
+        freeJson(value);
         fclose(fh);
     }
     else

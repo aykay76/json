@@ -1,7 +1,7 @@
 #ifndef _value_h
 #define _value_h
 
-enum State { Value, Object, Array, Number, String, True, False, Null };
+enum State { Object, Array, Number, String, True, False, Null };
 
 struct _value;
 
