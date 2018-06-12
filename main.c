@@ -325,10 +325,10 @@ value_t* parseValue(FILE *fh)
 
 // Exported functions, main will disappear when i'm done testing
 
-value_t* jsonFromFile(wchar_t *filename)
+value_t* jsonFromFile(char *filename)
 {
-    // TODO: open file and parse
-    return 0;
+    FILE *fh = fopen(filename, "r");
+    return parseValue(fh);
 }
 
 value_t* jsonFromString(wchar_t *input)
