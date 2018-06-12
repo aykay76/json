@@ -3,6 +3,7 @@
 #include <string.h>
 #include <wctype.h>
 #include <wchar.h>
+#include <errno.h>
 #include "include/value.h"
 
 // TODO: make shared library so that it can be used by other programs I intend to develop
@@ -57,65 +58,46 @@ wchar_t* parseString(FILE *fh)
                 break;
             case 0x0022: // closing quotation marks
                 if (esc) { esc = 0; string[pos++] = 0x0022; }
-                else
-                {
-                    done = 1;
-                    fwprintf(stderr, L"%ls\n", string);
-                }
+                else { done = 1; }
                 break;
             case 0x005c: // reserve solidus, escaping the next character(s)
                 if (esc) { string[pos++] = 0x005c; esc = 0; }
-                else
-                {
-                    esc = 1;
-                }
+                else { esc = 1; }
                 break;
             case 0x002f: // forward solidus
                 if (esc) { string[pos++] = 0x002f; esc = 0; }
-                else
-                {
-                    string[pos++] = 0x002f;
-                }
+                else { string[pos++] = 0x002f; }
                 break;
             case 'b': // 0x0062
                 if (esc) { string[pos++] = 0x0008; esc = 0; }
-                else
-                {
-                    string[pos++] = 'b';
-                }
+                else { string[pos++] = 'b'; }
                 break;
             case 'f':
                 if (esc) { string[pos++] = 0x000c; esc = 0; }
-                else
-                {
-                    string[pos++] = 'f';
-                }
+                else { string[pos++] = 'f'; }
                 break;
             case 'n':
                 if (esc) { string[pos++] = 0x000a; esc = 0; }
-                else
-                {
-                    string[pos++] = 'n';
-                }
+                else { string[pos++] = 'n'; }
                 break;
             case 'r':
                 if (esc) { string[pos++] = 0x000d; esc = 0; }
-                else
-                {
-                    string[pos++] = 'r';
-                }
+                else { string[pos++] = 'r'; }
                 break;
             case 't':
                 if (esc) { string[pos++] = 0x0009; esc = 0; }
-                else
-                {
-                    string[pos++] = 't';
-                }
+                else { string[pos++] = 't'; }
                 break;
             case 'u':
                 if (esc) 
                 {
-                    // TODO: handle arbitrary Unicode characters
+                    // expect 4 hex digits
+                    wchar_t hex[4];
+                    hex[0] = getwc(fh);
+                    hex[1] = getwc(fh);
+                    hex[2] = getwc(fh);
+                    hex[3] = getwc(fh);
+                    string[pos++] = (wchar_t)wcstol(hex, NULL, 16);
                 }
                 else
                 {
@@ -252,12 +234,11 @@ double parseNumber(FILE *fh)
             numberString[i] = 0;
             ungetwc(c, fh); col--;
             done = 1;
-fprintf(stderr, "%ls\n", numberString);
             number = wcstod(numberString, &end);
         }
-	else
+	    else
         {
-	    numberString[i++] = c;
+	        numberString[i++] = c;
         }
     }
 
@@ -367,6 +348,16 @@ value_t* getValue(wchar_t *name)
     return 0;
 }
 
+value_t* createValue()
+{
+
+}
+
+unsigned char replaceValue(wchar_t *path, value_t *value)
+{
+    return 1;
+}
+
 void freeJson(value_t *json)
 {
     // TODO: iterate through whole object freeing all string, arrays and subobjects
@@ -385,11 +376,18 @@ int main(int argc, char** argv)
         fh = fopen(argv[1], "r");
     }
 
-    value_t *value = parseValue(fh);
-    fclose(fh);
+    if (fh)
+    {
+        value_t *value = parseValue(fh);
+        // TODO: this isn't enough - we need deep freeing of all the substructures
+        free(value);
+        fclose(fh);
+    }
+    else
+    {
+        fprintf(stderr, "Error opening file: %d\n", errno);
+    }
 
-    // TODO: this isn't enough - we need deep freeing of all the substructures
-    free(value);
 
     return 0;
 }
