@@ -327,14 +327,26 @@ value_t* parseValue(FILE *fh)
 
 value_t* jsonFromFile(char *filename)
 {
+    value_t *value = 0;
     FILE *fh = fopen(filename, "r");
-    return parseValue(fh);
+    if (fh)
+    {
+        value = parseValue(fh);
+        fclose(fh);
+    }
+    return value;
 }
 
 value_t* jsonFromString(wchar_t *input)
 {
-    // TODO: need to adjust parsing to get characters from string or file
-    return 0;
+    value_t *value = 0;
+    FILE *fh = fmemopen(input, wcslen(input), "r");
+    if (fh)
+    {
+        value = parseValue(fh);
+        fclose(fh);
+    }
+    return value;
 }
 
 value_t* getValue(wchar_t *name)
@@ -420,7 +432,6 @@ int main(int argc, char** argv)
     {
         fprintf(stderr, "Error opening file: %d\n", errno);
     }
-
 
     return 0;
 }
