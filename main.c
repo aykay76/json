@@ -4,6 +4,7 @@
 #include <wctype.h>
 #include <wchar.h>
 #include <errno.h>
+#include <time.h>
 #include "include/value.h"
 
 // TODO: make shared library so that it can be used by other programs I intend to develop
@@ -424,9 +425,14 @@ int main(int argc, char** argv)
 
     if (fh)
     {
+        struct timespec t1, t2;
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
         value_t *value = parseValue(fh);
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t2);
         freeJson(value);
         fclose(fh);
+
+        fprintf(stderr, "Parsed in %lf sec\n", (double)((t2.tv_nsec - t1.tv_nsec) * 1e-9));
     }
     else
     {
