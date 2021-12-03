@@ -18,8 +18,8 @@ array_t* parseArray(FILE *fh);
 double parseNumber(FILE *fh);
 char parseLiteral(FILE *fh, wchar_t *staticvalue);
 
-int col = 0;
-int row = 0;
+int col = 1;
+int row = 1;
 
 wchar_t skipWhitespace(FILE *fh)
 {
@@ -40,10 +40,10 @@ wchar_t skipWhitespace(FILE *fh)
 
 wchar_t* parseString(FILE *fh)
 {
-    fwprintf(stderr, L"Parsing string ");
-    int len = 80;
+    fwprintf(stderr, L"Parsing string %d,%d\n", row, col);
+    int len = 128;
     wchar_t *string = (wchar_t *)malloc(sizeof(wchar_t) * len);
-    memset(string, 0, sizeof(wchar_t *) * len);
+    memset(string, 0, sizeof(wchar_t) * len);
     int pos = 0;
     wchar_t c = 0;
     char done = 0;
@@ -52,6 +52,7 @@ wchar_t* parseString(FILE *fh)
     while (!done)
     {
         c = getwc(fh); col++;
+        // putwc(c, stderr);
     
         switch (c)
         {
@@ -122,6 +123,8 @@ wchar_t* parseString(FILE *fh)
         }
     }
 
+    fwprintf(stderr, L"%ls\n", string);
+
     return string;
 }
 
@@ -157,6 +160,7 @@ object_t* parseObject(FILE *fh)
         }
         else if (c == 0x007d) // right curly bracket, object is done
         {
+            fwprintf(stderr, L"Found end of object: %d, %d\n", row, col);
             done = 1;
         }
         else if (c == 0x003a) // colon, now parse the value
@@ -186,6 +190,7 @@ array_t* parseArray(FILE *fh)
     
         if (c == 0x005d) // right square bracket, array is done
         {
+            fwprintf(stderr, L"Found end of array: %d, %d\n", row, col);
             done = 1;
         }
         else if (c == 0x002c) // comma, next value
@@ -256,6 +261,11 @@ char parseLiteral(FILE *fh, wchar_t *staticvalue)
         {
             index++;
             c = getwc(fh); col++;
+            if (c == 0x000a)
+            {
+                row++;
+                col = 0;
+            }
         }
         else
         {
@@ -268,7 +278,7 @@ char parseLiteral(FILE *fh, wchar_t *staticvalue)
 
 value_t* parseValue(FILE *fh)
 {
-    fwprintf(stderr, L"Parsing value\n");
+    // fwprintf(stderr, L"Parsing value\n");
     wchar_t c = 0;
     char done = 0;
     value_t* value = (value_t *)malloc(sizeof(value_t));
@@ -309,7 +319,10 @@ value_t* parseValue(FILE *fh)
             break;
         case 0x0074: // 't' - true
             value->type = True;
-            parseLiteral(fh, L"true");
+            if (parseLiteral(fh, L"true") == 0)
+            {
+                fwprintf(stderr, L"Error parsing true");
+            }
             break;
         case 0x0066: // 'f' - false
             value->type = False;
@@ -432,7 +445,7 @@ int main(int argc, char** argv)
         freeJson(value);
         fclose(fh);
 
-        fprintf(stderr, "Parsed in %lf sec\n", (double)((t2.tv_nsec - t1.tv_nsec) * 1e-9));
+        fprintf(stdout, "Parsed in %lf sec\n", (double)((t2.tv_nsec - t1.tv_nsec) * 1e-9));
     }
     else
     {
