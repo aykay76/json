@@ -445,7 +445,7 @@ int main(int argc, char** argv)
         freeJson(value);
         fclose(fh);
 
-        fprintf(stdout, "Parsed in %lf sec\n", (double)((t2.tv_nsec - t1.tv_nsec) * 1e-9));
+        fprintf(stdout, "Parsed %d lines in %lf sec\n", row, (double)((t2.tv_nsec - t1.tv_nsec) * 1e-9));
     }
     else
     {
